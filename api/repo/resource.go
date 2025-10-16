@@ -9,13 +9,13 @@ type RepoResourceOptions struct {
 	RepoUrl string
 }
 
-//RepoResource ...
+// RepoResource ...
 type RepoResource struct {
 	RepoDir string
 	RepoUrl string
 }
 
-//NewRepoResource ...
+// NewRepoResource ...
 func NewRepoResource(options *RepoResourceOptions) *RepoResource {
 	return &RepoResource{
 		RepoDir: options.RepoDir,
@@ -23,7 +23,7 @@ func NewRepoResource(options *RepoResourceOptions) *RepoResource {
 	}
 }
 
-//Register ...
+// Register ...
 func (pr *RepoResource) Register(container *restful.Container) {
 	ws := new(restful.WebService)
 	ws.
@@ -35,7 +35,8 @@ func (pr *RepoResource) Register(container *restful.Container) {
 	ws.Route(ws.GET("/{chart}").To(pr.chartCtrl).
 		Doc("get a chart").
 		Operation("chartCtrl").
-		Param(ws.PathParameter("chart", "identifier of the chart file").DataType("string")))
+		Param(ws.PathParameter("chart", "identifier of the chart file").DataType("string")).
+		Produces(restful.MIME_JSON, restful.MIME_XML, MimeGzip))
 
 	ws.Route(ws.PUT("/upload/{chart}").To(pr.uploadChartCtrl).
 		Doc("upload a chart").

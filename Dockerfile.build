@@ -1,14 +1,15 @@
-FROM golang:1.9
+FROM golang:1.16.15-bullseye
 
 RUN apt-get update
-RUN apt-get install curl --yes
+RUN apt-get install curl unzip --yes
 
-
-RUN curl https://glide.sh/get | sh
+RUN curl -fsSL https://github.com/Masterminds/glide/releases/download/v0.13.3/glide-v0.13.3-linux-amd64.zip -o temp.zip
+RUN unzip temp.zip
+RUN mv linux-amd64/glide /bin
 
 RUN mkdir -p $GOPATH/src/github.com/andrepinto/helmsman
 
-VOLUME  /go/src/github.com/andrepinto/helmsman/bin
+VOLUME $GOPATH/src/github.com/andrepinto/helmsman/bin
 
 COPY . $GOPATH/src/github.com/andrepinto/helmsman
 

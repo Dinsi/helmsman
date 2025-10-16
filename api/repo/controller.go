@@ -2,16 +2,18 @@ package repo
 
 import (
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/andrepinto/helmsman/pkg"
 	"github.com/emicklei/go-restful"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/helm/pkg/urlutil"
 )
+
+const MimeGzip = "application/gzip"
 
 func (pr *RepoResource) chartCtrl(request *restful.Request, response *restful.Response) {
 
@@ -20,20 +22,26 @@ func (pr *RepoResource) chartCtrl(request *restful.Request, response *restful.Re
 	id := request.PathParameter("chart")
 	env := request.PathParameter("env")
 
-	response.AddHeader("Content-Type", "text/plain")
+	response.Header().Set("Content-Type", "text/plain")
 
 	file, err := os.Open(filepath.Join(pr.RepoDir, env, id))
 	if err != nil {
-		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusInternalServerError, "500: Charts error.")
 		return
 	}
 
-	b, err := ioutil.ReadAll(file)
+	b, err := io.ReadAll(file)
 	if err != nil {
-		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusInternalServerError, "500: Charts error.")
 		return
+	}
+
+	accepts := strings.Split(request.Request.Header.Get("Accept"), ",")
+	for _, accept := range accepts {
+		if accept == MimeGzip {
+			response.Header().Set("Content-Type", MimeGzip)
+			break
+		}
 	}
 
 	response.Write(b)
@@ -49,12 +57,14 @@ func (pr *RepoResource) uploadChartCtrl(request *restful.Request, response *rest
 	response.AddHeader("Content-Type", "text/plain")
 
 	f, err := os.Create(filepath.Join(pr.RepoDir, env, id))
-	defer f.Close()
 	if err != nil {
 		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusInternalServerError, "500: Charts error.")
 		return
 	}
+
+	defer f.Close()
+
 	_, err = io.Copy(f, request.Request.Body)
 	defer request.Request.Body.Close()
 	if err != nil {
@@ -64,12 +74,6 @@ func (pr *RepoResource) uploadChartCtrl(request *restful.Request, response *rest
 	}
 
 	urlNew, _ := urlutil.URLJoin(pr.RepoUrl, "")
-	if err != nil {
-		response.AddHeader("Content-Type", "text/plain")
-		response.WriteErrorString(http.StatusInternalServerError, "500: Charts error.")
-		return
-	}
-
 	log.Debug(urlNew)
 
 	pkg.Index(pr.RepoDir, urlNew, "")

@@ -1,8 +1,8 @@
-FROM ubuntu:latest
+FROM ubuntu:trusty
 
 RUN mkdir -p /app/
 
-VOLUME  /app/charts
+VOLUME /app/charts
 
 COPY bin/helmsman /app
 
@@ -10,5 +10,4 @@ EXPOSE 8000
 
 WORKDIR /app
 
-CMD ./helmsman
-
+ENTRYPOINT ["./helmsman"]
