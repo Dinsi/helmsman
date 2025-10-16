@@ -1,18 +1,22 @@
 package pkg
 
 import (
-	"path/filepath"
 	"fmt"
-	repo "k8s.io/helm/pkg/repo"
-	"k8s.io/helm/pkg/chartutil"
 	"os"
+	"path/filepath"
+
 	"github.com/sirupsen/logrus"
+	"k8s.io/helm/pkg/chartutil"
+	"k8s.io/helm/pkg/repo"
 )
 
-func Index(dir, url, mergeTo string) error {
+func Index(dir, urlTemplate, env, mergeTo string) error {
+	dir = filepath.Join(dir, env)
+	urlStr := fmt.Sprintf(urlTemplate, env)
+
 	out := filepath.Join(dir, "index.yaml")
 	logrus.Debug(out)
-	i, err := repo.IndexDirectory(dir, url)
+	i, err := repo.IndexDirectory(dir, urlStr)
 	if err != nil {
 		return err
 	}
@@ -27,7 +31,7 @@ func Index(dir, url, mergeTo string) error {
 	return i.WriteFile(out, 0755)
 }
 
-func Package(path string, destination string) error{
+func Package(path string, destination string) error {
 	path, err := filepath.Abs(path)
 
 	ch, err := chartutil.LoadDir(path)

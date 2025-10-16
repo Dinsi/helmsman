@@ -1,6 +1,7 @@
 package app
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -9,9 +10,10 @@ import (
 	"github.com/andrepinto/helmsman/pkg"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/urfave/cli.v1"
+	"k8s.io/helm/pkg/urlutil"
 )
 
-//NewCliApp ...
+// NewCliApp ...
 func NewCliApp() *cli.App {
 
 	app := cli.NewApp()
@@ -30,9 +32,18 @@ func NewCliApp() *cli.App {
 			log.SetLevel(log.InfoLevel)
 		}
 
+		var err error
+
 		opts.Envs = c.StringSlice("env")
 
-		err := Init(opts)
+		opts.RepoUrl, err = urlutil.URLJoin(opts.RepoUrl, "/envs/%s/charts")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		opts.RepoUrl, _ = url.PathUnescape(opts.RepoUrl)
+
+		err = Init(opts)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -52,7 +63,7 @@ func NewCliApp() *cli.App {
 	return app
 }
 
-//Init ...
+// Init ...
 func Init(opts *HemlCmdOptions) error {
 
 	log.Info(opts.Envs)
@@ -64,11 +75,10 @@ func Init(opts *HemlCmdOptions) error {
 			return err
 		}
 
-		err = pkg.Index(folder, folder, "")
+		err = pkg.Index(opts.RepoDir, opts.RepoUrl, env, "")
 		if err != nil {
 			return err
 		}
-
 	}
 
 	return nil

@@ -32,6 +32,8 @@ func (pr *RepoResource) Register(container *restful.Container) {
 		Consumes(restful.MIME_XML, restful.MIME_JSON, restful.MIME_OCTET).
 		Produces(restful.MIME_JSON, restful.MIME_XML)
 
+	// NOTE: The app is aware of this route and uses it to modify opts.RepoUrl,
+	// which is used to both fetch and populate helm's index.yaml and charts
 	ws.Route(ws.GET("/{chart}").To(pr.chartCtrl).
 		Doc("get a chart").
 		Operation("chartCtrl").

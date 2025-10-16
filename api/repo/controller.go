@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -10,7 +11,6 @@ import (
 	"github.com/andrepinto/helmsman/pkg"
 	"github.com/emicklei/go-restful"
 	log "github.com/sirupsen/logrus"
-	"k8s.io/helm/pkg/urlutil"
 )
 
 const MimeGzip = "application/gzip"
@@ -54,11 +54,10 @@ func (pr *RepoResource) uploadChartCtrl(request *restful.Request, response *rest
 	id := request.PathParameter("chart")
 	env := request.PathParameter("env")
 
-	response.AddHeader("Content-Type", "text/plain")
+	response.Header().Set("Content-Type", "text/plain")
 
 	f, err := os.Create(filepath.Join(pr.RepoDir, env, id))
 	if err != nil {
-		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusInternalServerError, "500: Charts error.")
 		return
 	}
@@ -68,15 +67,15 @@ func (pr *RepoResource) uploadChartCtrl(request *restful.Request, response *rest
 	_, err = io.Copy(f, request.Request.Body)
 	defer request.Request.Body.Close()
 	if err != nil {
-		response.AddHeader("Content-Type", "text/plain")
 		response.WriteErrorString(http.StatusInternalServerError, "500: Charts error.")
 		return
 	}
 
-	urlNew, _ := urlutil.URLJoin(pr.RepoUrl, "")
-	log.Debug(urlNew)
-
-	pkg.Index(pr.RepoDir, urlNew, "")
+	err = pkg.Index(pr.RepoDir, pr.RepoUrl, env, "")
+	if err != nil {
+		response.WriteErrorString(http.StatusInternalServerError, fmt.Sprintf("500: Charts error: %v", err))
+		return
+	}
 
 	response.WriteEntity(id)
 }
